@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Travel Optimizer - Profile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+        
+        input[type="number"],
+        input[type="text"],
+        input[type="date"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 8px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .checkbox-item label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        
+        .help-text {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .required {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌴 Family Travel Optimizer</h1>
+        <p class="subtitle">Tell us about your family and travel preferences</p>
+        
+        <form action="/submit_profile" method="POST">
+            <div class="form-group">
+                <label for="num_adults">Number of Adults <span class="required">*</span></label>
+                <input type="number" id="num_adults" name="num_adults" min="1" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="num_kids">Number of Kids <span class="required">*</span></label>
+                <input type="number" id="num_kids" name="num_kids" min="0" value="0" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="kids_ages">Ages of Kids (comma-separated, e.g., "5, 8, 12")</label>
+                <input type="text" id="kids_ages" name="kids_ages" placeholder="e.g., 5, 8, 12">
+                <p class="help-text">Leave blank if no kids</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="destinations">Trip Destination(s) <span class="required">*</span></label>
+                <input type="text" id="destinations" name="destinations" placeholder="e.g., Paris, France or Miami, FL" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="start_date">Start Date <span class="required">*</span></label>
+                <input type="date" id="start_date" name="start_date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="end_date">End Date <span class="required">*</span></label>
+                <input type="date" id="end_date" name="end_date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="budget">Total Budget ($) <span class="required">*</span></label>
+                <input type="number" id="budget" name="budget" min="0" step="0.01" placeholder="0.00" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="travel_style">Travel Style <span class="required">*</span></label>
+                <select id="travel_style" name="travel_style" required>
+                    <option value="">Select a travel style...</option>
+                    <option value="budget">Budget</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="luxury">Luxury</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Interests (select all that apply)</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="beach" name="interests" value="beach">
+                        <label for="beach">Beach</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="museums" name="interests" value="museums">
+                        <label for="museums">Museums</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hiking" name="interests" value="hiking">
+                        <label for="hiking">Hiking</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="theme_parks" name="interests" value="theme_parks">
+                        <label for="theme_parks">Theme Parks</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="other" name="interests" value="other">
+                        <label for="other">Other</label>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="submit-btn">Submit Profile</button>
+        </form>
+    </div>
+</body>
+</html>
+

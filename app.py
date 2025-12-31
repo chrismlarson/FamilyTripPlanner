@@ -1,0 +1,96 @@
+from flask import Flask, render_template, request, redirect, url_for
+import sqlite3
+from datetime import datetime
+import os
+
+app = Flask(__name__)
+
+# Database setup
+DATABASE = 'travel_mvp.db'
+
+def init_db():
+    """Initialize the database and create the FamilyProfiles table if it doesn't exist."""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS FamilyProfiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            num_adults INTEGER NOT NULL,
+            num_kids INTEGER NOT NULL,
+            kids_ages TEXT,
+            destinations TEXT NOT NULL,
+            start_date TEXT NOT NULL,
+            end_date TEXT NOT NULL,
+            budget REAL NOT NULL,
+            travel_style TEXT NOT NULL,
+            interests TEXT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+@app.route('/')
+def index():
+    """Homepage with family profile form."""
+    return render_template('index.html')
+
+@app.route('/submit_profile', methods=['POST'])
+def submit_profile():
+    """Handle form submission, save to database, and redirect to thank you page."""
+    # Get form data
+    num_adults = request.form.get('num_adults', type=int)
+    num_kids = request.form.get('num_kids', type=int)
+    kids_ages = request.form.get('kids_ages', '')
+    destinations = request.form.get('destinations', '')
+    start_date = request.form.get('start_date', '')
+    end_date = request.form.get('end_date', '')
+    budget = request.form.get('budget', type=float)
+    travel_style = request.form.get('travel_style', '')
+    
+    # Get interests (checkboxes - can be multiple)
+    interests_list = request.form.getlist('interests')
+    interests = ','.join(interests_list) if interests_list else ''
+    
+    # Print to console
+    print("\n" + "="*50)
+    print("FAMILY PROFILE SUBMISSION")
+    print("="*50)
+    print(f"Number of Adults: {num_adults}")
+    print(f"Number of Kids: {num_kids}")
+    print(f"Kids Ages: {kids_ages}")
+    print(f"Destinations: {destinations}")
+    print(f"Start Date: {start_date}")
+    print(f"End Date: {end_date}")
+    print(f"Budget: ${budget:,.2f}")
+    print(f"Travel Style: {travel_style}")
+    print(f"Interests: {interests}")
+    print("="*50 + "\n")
+    
+    # Save to database
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO FamilyProfiles 
+        (num_adults, num_kids, kids_ages, destinations, start_date, end_date, budget, travel_style, interests)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (num_adults, num_kids, kids_ages, destinations, start_date, end_date, budget, travel_style, interests))
+    
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for('thank_you'))
+
+@app.route('/thank_you')
+def thank_you():
+    """Thank you page after profile submission."""
+    return render_template('thank_you.html')
+
+if __name__ == '__main__':
+    # Initialize database on startup
+    init_db()
+    app.run(debug=True, host='127.0.0.1', port=5000)
+
