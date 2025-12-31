@@ -13,12 +13,51 @@ def init_db():
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     
+    # Check if table exists and what columns it has
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='FamilyProfiles'")
+    table_exists = cursor.fetchone() is not None
+    
+    if table_exists:
+        # Check if old column exists (migration from kids_ages to kids_birthdates)
+        cursor.execute("PRAGMA table_info(FamilyProfiles)")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'kids_ages' in columns and 'kids_birthdates' not in columns:
+            # Migrate: create new table, copy data, drop old table, rename new table
+            cursor.execute('''
+                CREATE TABLE FamilyProfiles_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    num_adults INTEGER NOT NULL,
+                    num_kids INTEGER NOT NULL,
+                    kids_birthdates TEXT,
+                    destinations TEXT NOT NULL,
+                    start_date TEXT NOT NULL,
+                    end_date TEXT NOT NULL,
+                    budget REAL NOT NULL,
+                    travel_style TEXT NOT NULL,
+                    interests TEXT,
+                    timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Copy data (kids_ages will be NULL in new table since we can't convert ages to birthdates)
+            cursor.execute('''
+                INSERT INTO FamilyProfiles_new 
+                (id, num_adults, num_kids, kids_birthdates, destinations, start_date, end_date, budget, travel_style, interests, timestamp)
+                SELECT id, num_adults, num_kids, NULL, destinations, start_date, end_date, budget, travel_style, interests, timestamp
+                FROM FamilyProfiles
+            ''')
+            
+            cursor.execute('DROP TABLE FamilyProfiles')
+            cursor.execute('ALTER TABLE FamilyProfiles_new RENAME TO FamilyProfiles')
+            conn.commit()
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS FamilyProfiles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             num_adults INTEGER NOT NULL,
             num_kids INTEGER NOT NULL,
-            kids_ages TEXT,
+            kids_birthdates TEXT,
             destinations TEXT NOT NULL,
             start_date TEXT NOT NULL,
             end_date TEXT NOT NULL,
@@ -43,7 +82,19 @@ def submit_profile():
     # Get form data
     num_adults = request.form.get('num_adults', type=int)
     num_kids = request.form.get('num_kids', type=int)
-    kids_ages = request.form.get('kids_ages', '')
+    
+    # Get kids birthdates from month/day/year dropdowns
+    kids_birthdates_list = []
+    for i in range(1, num_kids + 1):
+        month = request.form.get(f'kid_{i}_month', '')
+        day = request.form.get(f'kid_{i}_day', '')
+        year = request.form.get(f'kid_{i}_year', '')
+        if month and day and year:
+            # Format as YYYY-MM-DD
+            birthdate = f"{year}-{month}-{day}"
+            kids_birthdates_list.append(birthdate)
+    kids_birthdates = ','.join(kids_birthdates_list) if kids_birthdates_list else ''
+    
     destinations = request.form.get('destinations', '')
     start_date = request.form.get('start_date', '')
     end_date = request.form.get('end_date', '')
@@ -60,7 +111,7 @@ def submit_profile():
     print("="*50)
     print(f"Number of Adults: {num_adults}")
     print(f"Number of Kids: {num_kids}")
-    print(f"Kids Ages: {kids_ages}")
+    print(f"Kids Birthdates: {kids_birthdates}")
     print(f"Destinations: {destinations}")
     print(f"Start Date: {start_date}")
     print(f"End Date: {end_date}")
@@ -75,9 +126,9 @@ def submit_profile():
     
     cursor.execute('''
         INSERT INTO FamilyProfiles 
-        (num_adults, num_kids, kids_ages, destinations, start_date, end_date, budget, travel_style, interests)
+        (num_adults, num_kids, kids_birthdates, destinations, start_date, end_date, budget, travel_style, interests)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (num_adults, num_kids, kids_ages, destinations, start_date, end_date, budget, travel_style, interests))
+    ''', (num_adults, num_kids, kids_birthdates, destinations, start_date, end_date, budget, travel_style, interests))
     
     conn.commit()
     conn.close()

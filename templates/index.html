@@ -130,6 +130,48 @@
         .required {
             color: #e74c3c;
         }
+        
+        .kids-birthdates-container {
+            display: none;
+        }
+        
+        .kids-birthdates-container.show {
+            display: block;
+        }
+        
+        .birthdate-field {
+            margin-bottom: 15px;
+        }
+        
+        .birthdate-field label {
+            font-size: 0.9em;
+            color: #555;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .birthdate-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .birthdate-inputs select {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+        
+        .birthdate-inputs select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .birthdate-year {
+            flex: 1.2;
+        }
     </style>
 </head>
 <body>
@@ -140,18 +182,37 @@
         <form action="/submit_profile" method="POST">
             <div class="form-group">
                 <label for="num_adults">Number of Adults <span class="required">*</span></label>
-                <input type="number" id="num_adults" name="num_adults" min="1" required>
+                <select id="num_adults" name="num_adults" required>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                </select>
             </div>
             
             <div class="form-group">
                 <label for="num_kids">Number of Kids <span class="required">*</span></label>
-                <input type="number" id="num_kids" name="num_kids" min="0" value="0" required>
+                <select id="num_kids" name="num_kids" required onchange="updateBirthdateFields()">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                </select>
             </div>
             
-            <div class="form-group">
-                <label for="kids_ages">Ages of Kids (comma-separated, e.g., "5, 8, 12")</label>
-                <input type="text" id="kids_ages" name="kids_ages" placeholder="e.g., 5, 8, 12">
-                <p class="help-text">Leave blank if no kids</p>
+            <div class="form-group kids-birthdates-container" id="kids_birthdates_container">
+                <label>Kids' Birthdates <span class="required">*</span></label>
+                <p class="help-text">Enter each child's birthdate so we can calculate their exact ages during your trip</p>
+                <div id="birthdate_fields"></div>
             </div>
             
             <div class="form-group">
@@ -213,6 +274,113 @@
             <button type="submit" class="submit-btn">Submit Profile</button>
         </form>
     </div>
+    
+    <script>
+        function updateBirthdateFields() {
+            const numKids = parseInt(document.getElementById('num_kids').value) || 0;
+            const container = document.getElementById('kids_birthdates_container');
+            const fieldsContainer = document.getElementById('birthdate_fields');
+            
+            // Save existing values before clearing
+            const savedValues = {};
+            for (let i = 1; i <= 10; i++) { // Check up to 10 kids to be safe
+                const month = document.querySelector(`select[name="kid_${i}_month"]`);
+                const day = document.querySelector(`select[name="kid_${i}_day"]`);
+                const year = document.querySelector(`select[name="kid_${i}_year"]`);
+                if (month && day && year) {
+                    savedValues[i] = {
+                        month: month.value,
+                        day: day.value,
+                        year: year.value
+                    };
+                }
+            }
+            
+            // Show/hide container
+            if (numKids > 0) {
+                container.classList.add('show');
+            } else {
+                container.classList.remove('show');
+            }
+            
+            // Clear existing fields
+            fieldsContainer.innerHTML = '';
+            
+            // Add birthdate fields for each kid
+            for (let i = 1; i <= numKids; i++) {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'birthdate-field';
+                
+                const label = document.createElement('label');
+                label.textContent = `Child ${i} Birthdate:`;
+                
+                const inputsContainer = document.createElement('div');
+                inputsContainer.className = 'birthdate-inputs';
+                
+                // Month dropdown
+                const monthSelect = document.createElement('select');
+                monthSelect.name = `kid_${i}_month`;
+                monthSelect.required = true;
+                monthSelect.innerHTML = '<option value="">Month</option>';
+                const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+                months.forEach((month, idx) => {
+                    const option = document.createElement('option');
+                    option.value = String(idx + 1).padStart(2, '0');
+                    option.textContent = month;
+                    if (savedValues[i] && savedValues[i].month === option.value) {
+                        option.selected = true;
+                    }
+                    monthSelect.appendChild(option);
+                });
+                
+                // Day dropdown
+                const daySelect = document.createElement('select');
+                daySelect.name = `kid_${i}_day`;
+                daySelect.required = true;
+                daySelect.innerHTML = '<option value="">Day</option>';
+                for (let day = 1; day <= 31; day++) {
+                    const option = document.createElement('option');
+                    option.value = String(day).padStart(2, '0');
+                    option.textContent = day;
+                    if (savedValues[i] && savedValues[i].day === option.value) {
+                        option.selected = true;
+                    }
+                    daySelect.appendChild(option);
+                }
+                
+                // Year dropdown (from current year back to 30 years ago, suitable for kids)
+                const yearSelect = document.createElement('select');
+                yearSelect.name = `kid_${i}_year`;
+                yearSelect.className = 'birthdate-year';
+                yearSelect.required = true;
+                yearSelect.innerHTML = '<option value="">Year</option>';
+                const currentYear = new Date().getFullYear();
+                for (let year = currentYear; year >= currentYear - 30; year--) {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    if (savedValues[i] && savedValues[i].year === String(year)) {
+                        option.selected = true;
+                    }
+                    yearSelect.appendChild(option);
+                }
+                
+                inputsContainer.appendChild(monthSelect);
+                inputsContainer.appendChild(daySelect);
+                inputsContainer.appendChild(yearSelect);
+                
+                fieldDiv.appendChild(label);
+                fieldDiv.appendChild(inputsContainer);
+                fieldsContainer.appendChild(fieldDiv);
+            }
+        }
+        
+        // Initialize on page load if there's already a value
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBirthdateFields();
+        });
+    </script>
 </body>
 </html>
 
